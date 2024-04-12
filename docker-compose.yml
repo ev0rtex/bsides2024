@@ -1,0 +1,72 @@
+name: "bsides-demo"
+
+secrets:
+  bsides_db_pass:
+    file: "./secrets/bsides_db_pass.secret"
+
+volumes:
+  postgresql-data:
+  vault-init:
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL DB: something we can connect to
+  # ----------------------------------------------------------------------------
+
+  postgresql:
+    image: "bitnami/postgresql:16"
+    secrets:
+      - "bsides_db_pass"
+    environment:
+      POSTGRESQL_DATABASE: "bsides"
+      POSTGRESQL_USERNAME: "bsides"
+      POSTGRESQL_PASSWORD_FILE: "/run/secrets/bsides_db_pass"
+    ports:
+      - "5432:5432/tcp"
+    volumes:
+      - "postgresql-data:/bitnami/postgresql"
+    restart: "unless-stopped"
+
+  # ----------------------------------------------------------------------------
+  # HashiCorp Vault: secrets storage, etc.
+  # ----------------------------------------------------------------------------
+
+  # In real prod usage don't use this - it is a mock version of AWS' Key Management Service
+  kms:
+    image: "nsmithuk/local-kms"
+    userns_mode: "host"
+    environment:
+      PORT: 80
+      KMS_ACCOUNT_ID: 111122223333
+      KMS_REGION: "us-east-1"
+    volumes:
+      - "./kms/init:/init"
+      - "./kms/data:/data"
+    restart: "unless-stopped"
+
+  vault:
+    image: "hashicorp/vault:1.16"
+    command: "vault server -config /vault/config/config.hcl"
+    ports:
+      - "8200:8200/tcp"
+    volumes:
+      - "./vault/logs:/vault/logs:Z"
+      - "./vault/data:/vault/data:Z"
+      - "./vault/config:/vault/config:Z"
+    depends_on:
+      - "kms"
+    restart: "unless-stopped"
+
+  setup:
+    image: "hashicorp/vault:1.16"
+    entrypoint: "sh /vault/scripts/setup.sh"
+    secrets:
+      - "bsides_db_pass"
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+    volumes:
+      - "./vault/scripts:/vault/scripts"
+      - "vault-init:/vault/init"
+    depends_on:
+      - "vault"
+      - "postgresql"

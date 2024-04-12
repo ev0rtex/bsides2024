@@ -1,0 +1,15 @@
+Keys:
+  Symmetric:
+    Aes:
+      - Metadata:
+          # uuidgen | tr '[:upper:]' '[:lower:]'
+          KeyId: "8bcc6508-0c25-401d-a571-01f314bbe877"
+          KeyUsage: "ENCRYPT_DECRYPT"
+          Description: "Vault KMS unseal key"
+        BackingKeys:
+          # openssl rand -hex 32
+          - "f82b01af46b736d918e55c4f04381e2e649b32dbd65f56b9a2bd06bd04a9d1cf"
+Aliases:
+  - AliasName: alias/vault-unseal
+    # UUID matching KeyId from above
+    TargetKeyId: "8bcc6508-0c25-401d-a571-01f314bbe877"
