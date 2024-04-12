@@ -3,6 +3,8 @@ Demo for BSidesSLC 2024
 
 This creates a simple PostgreSQL database, a single-node vault instance with autounseal enabled, and then runs setup tasks to enable the PG database secrets engine for dynamic credential management.
 
+### Bringing it up and trying it
+
 To run it just make sure you have Docker installed and run:
 ```sh
 docker compose up -d
@@ -55,4 +57,13 @@ bsides=> \du
  v-root-bsides-r-eooVhF09EM7QviHHVGwC-1712943416 | Password valid until 2024-04-12 18:39:11+00                | {}
 
 bsides=> \q
+```
+
+### Cleanup
+
+Just run this to clean everything up or reset to the starting state:
+```sh
+docker compose down -v \
+&& docker image rm build/vault:latest \
+&& rm -rf kms/data vault/{data,logs,config/kmsinit.json}
 ```
